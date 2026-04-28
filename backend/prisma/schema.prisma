@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  password   String
+  isVerified  Boolean  @default(false)
+  otp         String?
+  otpExpiry   DateTime?
+  name       String?
+  watchlists Watchlist[]
+  alerts     Alert[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Stock {
+  id        Int      @id @default(autoincrement())
+  symbol    String   @unique    
+  name      String
+  price     Float
+  change    Float
+  volume    Float
+  createdAt DateTime @default(now())
+
+  prices     StockPrice[]
+  predictions Prediction[]
+  watchlists  Watchlist[]
+  alerts      Alert[]
+}
+
+model Prediction {
+  id         Int      @id @default(autoincrement())
+  stock      Stock    @relation(fields: [stockId], references: [id])
+  stockId    Int
+  signal     String // Buy, Sell, Hold
+  confidence Float
+  indicators Json? // SMA, EMA, RSI, MACD values
+  createdAt  DateTime @default(now())
+}
+
+model Watchlist {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  stock     Stock    @relation(fields: [stockId], references: [id])
+  stockId   Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, stockId])
+}
+
+model StockPrice {
+  id       Int      @id @default(autoincrement())
+  date     DateTime
+  open     Float
+  high     Float
+  low      Float
+  close    Float
+  volume   Float
+
+  stockId Int
+  stock   Stock @relation(fields: [stockId], references: [id])
+
+  @@unique([stockId, date])
+}
+
+model Alert {
+  id          Int      @id @default(autoincrement())
+  targetPrice Float
+  triggerType String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  userId  Int
+  stockId Int
+
+  user  User  @relation(fields: [userId], references: [id])
+  stock Stock @relation(fields: [stockId], references: [id])
+}

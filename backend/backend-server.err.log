@@ -1,0 +1,16 @@
+[31m[Nest] 13764  - [39m04/28/2026, 5:38:46 PM [31m  ERROR[39m [38;5;3m[NestApplication] [39m[31mError: listen EADDRINUSE: address already in use :::5000[39m[38;5;3m +3ms[39m
+UNHANDLED REJECTION: Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at ExpressAdapter.listen (D:\stock_market\stock-prediction-project\backend\node_modules\@nestjs\platform-express\adapters\express-adapter.js:95:32)
+    at D:\stock_market\stock-prediction-project\backend\node_modules\@nestjs\core\nest-application.js:183:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\stock_market\stock-prediction-project\backend\node_modules\@nestjs\core\nest-application.js:173:16)
+    at async bootstrap (D:\stock_market\stock-prediction-project\backend\src\main.ts:47:3) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}

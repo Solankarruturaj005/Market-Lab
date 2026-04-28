@@ -1,0 +1,253 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    @apply bg-slate-950;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-slate-950 text-slate-100 antialiased;
+    font-family: 'Inter', sans-serif;
+    background-image:
+      radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.14), transparent 30%),
+      linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(3, 7, 18, 1));
+  }
+
+  html.dark body {
+    @apply bg-slate-950 text-slate-100;
+  }
+
+  html:not(.dark) body {
+    @apply bg-slate-100 text-slate-900;
+    background-image:
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 24%),
+      radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.08), transparent 28%),
+      linear-gradient(180deg, #f8fafc, #e2e8f0);
+  }
+
+  html:not(.dark) .text-white {
+    @apply text-slate-950;
+  }
+
+  html:not(.dark) .text-slate-200 {
+    @apply text-slate-700;
+  }
+
+  html:not(.dark) .text-slate-300 {
+    @apply text-slate-600;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-[28px] border border-white/10 bg-slate-950/60 shadow-2xl shadow-slate-950/20 backdrop-blur-xl transition duration-300 ease-out;
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(34, 211, 238, 0.14), transparent 34%),
+      radial-gradient(circle at 88% 8%, rgba(168, 85, 247, 0.12), transparent 30%),
+      linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.74) 48%, rgba(8, 47, 73, 0.36));
+    transition-property: transform, box-shadow, border-color, background-color;
+  }
+
+  .card:hover {
+    @apply border-cyan-300/25 shadow-cyan-950/30;
+    transform: translateY(-3px);
+    box-shadow:
+      0 26px 70px rgba(2, 6, 23, 0.45),
+      0 0 44px rgba(34, 211, 238, 0.08);
+  }
+
+  html:not(.dark) .card {
+    @apply border-slate-200/70 bg-white/80 shadow-cyan-950/5;
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(14, 165, 233, 0.12), transparent 32%),
+      radial-gradient(circle at 88% 8%, rgba(16, 185, 129, 0.10), transparent 30%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.88));
+  }
+
+  html:not(.dark) .card:hover {
+    @apply border-cyan-300/40 shadow-cyan-900/10;
+    box-shadow:
+      0 22px 55px rgba(15, 23, 42, 0.10),
+      0 0 34px rgba(14, 165, 233, 0.10);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .card:hover {
+      transform: none;
+      transition-duration: 0.01ms;
+    }
+  }
+
+  .primary-button {
+    @apply inline-flex items-center justify-center rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70;
+  }
+
+  .field {
+    @apply flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3;
+  }
+
+  html:not(.dark) .field {
+    @apply border-slate-200 bg-slate-50;
+  }
+
+  .field-input {
+    @apply w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500;
+  }
+
+  html:not(.dark) .field-input {
+    @apply text-slate-900 placeholder:text-slate-400;
+  }
+
+  .search-field,
+  .dropdown-shell {
+    @apply flex items-center gap-3 border border-white/10 bg-slate-900 text-white shadow-xl transition duration-200 ease-out;
+  }
+
+  .search-field {
+    @apply min-w-[220px] flex-1 rounded-2xl px-4 py-3;
+  }
+
+  .dropdown-shell {
+    @apply rounded-lg px-4 py-2 hover:border-cyan-300/30 hover:bg-slate-800;
+  }
+
+  .search-field:focus-within,
+  .dropdown-shell:focus-within {
+    @apply border-cyan-300/40 shadow-cyan-950/30;
+  }
+
+  .search-input,
+  .dropdown-select {
+    @apply w-full bg-transparent text-sm text-white outline-none transition placeholder:text-slate-500;
+  }
+
+  .dropdown-select {
+    @apply max-h-64 cursor-pointer overflow-y-auto pr-2;
+  }
+
+  .dropdown-select option,
+  .dropdown-option {
+    @apply cursor-pointer bg-slate-900 px-4 py-2 text-sm text-white transition;
+  }
+
+  .dropdown-select option:hover,
+  .dropdown-select option:checked,
+  .dropdown-option:hover {
+    @apply bg-slate-800 text-cyan-300;
+  }
+
+  html.dark .dropdown-shell,
+  html.dark .dropdown-select,
+  html.dark .dropdown-select option {
+    @apply bg-slate-900 text-white;
+  }
+
+  html:not(.dark) .search-field,
+  html:not(.dark) .dropdown-shell {
+    @apply border-slate-200 bg-slate-900 text-white;
+  }
+
+  .display-title {
+    font-family: 'Space Grotesk', sans-serif;
+    @apply text-5xl font-bold leading-[1.05] tracking-tight text-white md:text-6xl;
+  }
+
+  html:not(.dark) .display-title {
+    @apply text-slate-950;
+  }
+
+  /* ─── Skeleton loader shimmer ──────────────────────────── */
+  .skeleton {
+    @apply rounded-lg bg-white/5;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 25%,
+      rgba(255, 255, 255, 0.09) 50%,
+      rgba(255, 255, 255, 0.04) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite;
+  }
+
+  html:not(.dark) .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.06) 25%,
+      rgba(0, 0, 0, 0.12) 50%,
+      rgba(0, 0, 0, 0.06) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite;
+  }
+}
+
+@layer utilities {
+  .bg-white\/8 {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .price-flash-up {
+    animation: price-flash-up 0.9s ease-out;
+  }
+
+  .price-flash-down {
+    animation: price-flash-down 0.9s ease-out;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes price-flash-up {
+  0% {
+    background-color: rgba(16, 185, 129, 0.32);
+    color: #bbf7d0;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes price-flash-down {
+  0% {
+    background-color: rgba(244, 63, 94, 0.28);
+    color: #fecdd3;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
