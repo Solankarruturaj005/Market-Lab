@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common'; // FIXED
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
 
 export interface AnalyzeStockInput {
   symbol: string;
@@ -10,6 +10,7 @@ export interface AnalyzeStockInput {
   macd?: number | null;
   sma20?: number | null;
   ema20?: number | null;
+  volume?: number | null; // ADDED
 }
 
 export interface AnalyzeStockResult {
@@ -18,7 +19,7 @@ export interface AnalyzeStockResult {
   signal: 'BUY' | 'SELL' | 'HOLD';
   reasoning: string;
   confidence: number;
-  source: 'openai' | 'rule-based';
+  source: 'rule-based' | 'gemini'; // FIXED
 }
 
 export interface ChatMessage {
@@ -28,7 +29,7 @@ export interface ChatMessage {
 
 export interface ChatResult {
   reply: string;
-  source: 'openai' | 'fallback';
+  source: 'fallback' | 'gemini'; // FIXED
 }
 
 export interface NewsItem {
@@ -39,66 +40,87 @@ export interface NewsItem {
 export interface NewsSummaryResult {
   summary: string;
   sentiment: 'bullish' | 'bearish' | 'neutral';
-  source: 'openai' | 'fallback';
+  source: 'fallback' | 'gemini'; // FIXED
 }
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private readonly openaiUrl = 'https://api.openai.com/v1/chat/completions';
-  private readonly model = 'gpt-3.5-turbo';
+  private readonly modelName = 'gemini-2.5-flash'; // UPDATED MODEL
+  private genAI: GoogleGenerativeAI | null = null;
 
-  constructor(private readonly configService: ConfigService) {}
-
-  private get apiKey(): string | undefined {
-    return this.configService.get<string>('OPENAI_API_KEY')?.trim();
+  constructor(private readonly configService: ConfigService) {
+    console.log('Gemini API:', process.env.GEMINI_API_KEY ? 'SET' : 'NOT SET'); // FIXED
+    const key = this.configService.get<string>('GEMINI_API_KEY')?.trim();
+    if (key) {
+      this.genAI = new GoogleGenerativeAI(key);
+    } else {
+      this.logger.warn('[AiService] GEMINI_API_KEY not set — using rule-based fallback');
+    }
   }
 
-  private async callOpenAI(
-    messages: { role: string; content: string }[],
-    maxTokens = 400,
-  ): Promise<string | null> {
-    const key = this.apiKey;
+  // ─── Gemini Call Helper ────────────────────────────────────────────────────
+  private async callGemini(prompt: string): Promise<string | null> { // FIXED
+    console.log('Gemini called'); // ADDED DEBUG
 
-    if (!key) {
-      this.logger.warn('[AiService] OPENAI_API_KEY not set — using rule-based fallback');
+    if (!this.genAI) {
+      console.log('AI fallback used: Gemini API key missing'); // SAFE FALLBACK
       return null;
     }
 
     try {
-      const response = await axios.post(
-        this.openaiUrl,
-        {
-          model: this.model,
-          messages,
-          max_tokens: maxTokens,
-          temperature: 0.4,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${key}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 15_000,
-        },
-      );
+      const model = this.genAI.getGenerativeModel({
+        model: this.modelName, // UPDATED MODEL
+      });
 
-      return response.data?.choices?.[0]?.message?.content?.trim() ?? null;
+      const result = await model.generateContent(prompt); // FIXED
+
+      const text = result.response?.text()?.trim();
+      console.log('Gemini response:', text); // ADDED DEBUG
+      return text || null;
     } catch (err: any) {
-      const msg = axios.isAxiosError(err)
-        ? `${err.message} (status: ${err.response?.status})`
-        : err?.message ?? 'Unknown';
-      this.logger.error(`[AiService] OpenAI call failed: ${msg}`);
-      return null;
+      console.error('Gemini Error:', err); // FIXED
+      this.logger.error(`[AiService] Gemini call failed: ${err?.message ?? 'Unknown'}`);
+      return null; // SAFE FALLBACK
     }
   }
 
-  // ─── Rule-based fallback analysis ─────────────────────────────────────────
+  async testGemini(): Promise<void> { // ADDED
+    if (!this.genAI) {
+      console.log('Gemini test skipped: API key NOT SET'); // SAFE FALLBACK
+      return;
+    }
+
+    try {
+      const model = this.genAI.getGenerativeModel({
+        model: this.modelName, // UPDATED MODEL
+      });
+      const result = await model.generateContent('Say hello');
+      console.log(result.response.text());
+    } catch (error: any) {
+      console.log('AI fails'); // ADDED
+      this.logger.error(`[AiService] Gemini test failed: ${error?.message ?? 'Unknown'}`);
+    }
+  }
+
+  // ─── Rule-based fallback analysis (UNCHANGED) ──────────────────────────────
+  private geminiFailureFallback(input: AnalyzeStockInput): AnalyzeStockResult { // SAFE FALLBACK
+    const fallback = this.ruleBasedSignal(input); // FIXED
+
+    return {
+      ...fallback,
+      summary: fallback.summary || 'AI unavailable, using fallback analysis',
+      reasoning: fallback.reasoning || 'Fallback triggered due to AI failure',
+      source: 'rule-based',
+    };
+  }
+
   private ruleBasedSignal(input: AnalyzeStockInput): AnalyzeStockResult {
-    const { symbol, price, change, rsi, macd, sma20 } = input;
+    const { symbol, price, change, rsi, macd, sma20, volume } = input;
     let buyScore = 0;
     let sellScore = 0;
     const reasons: string[] = [];
+    const safeSymbol = String(symbol ?? '').trim().toUpperCase() || 'UNKNOWN'; // FIXED
 
     if (rsi != null) {
       if (rsi < 30) { buyScore += 2; reasons.push(`RSI ${rsi.toFixed(1)} is oversold (bullish)`); }
@@ -121,15 +143,19 @@ export class AiService {
       else if (change < -2) { sellScore += 1; reasons.push(`Significant daily loss of ${change.toFixed(2)}%`); }
     }
 
+    if (volume != null && Number.isFinite(Number(volume))) {
+      reasons.push(`Volume is ${Number(volume).toLocaleString('en-US')}`); // ADDED
+    }
+
     const net = buyScore - sellScore;
     const signal: 'BUY' | 'SELL' | 'HOLD' = net >= 2 ? 'BUY' : net <= -2 ? 'SELL' : 'HOLD';
     const confidence = Math.min(95, 50 + Math.abs(net) * 12);
 
     const dirWord = signal === 'BUY' ? 'bullish' : signal === 'SELL' ? 'bearish' : 'mixed';
-    const summary = `${symbol} shows ${dirWord} technicals. Price is $${price ?? 'N/A'} with a ${change != null ? (change >= 0 ? '+' : '') + change.toFixed(2) + '% daily change' : 'unknown daily change'}.`;
+    const summary = `${safeSymbol} shows ${dirWord} technicals. Price is $${price ?? 'N/A'} with a ${change != null ? (change >= 0 ? '+' : '') + change.toFixed(2) + '% daily change' : 'neutral or unavailable daily change'}.`;
 
     return {
-      symbol,
+      symbol: safeSymbol,
       summary,
       signal,
       reasoning: reasons.join(' | ') || 'Insufficient data for detailed analysis.',
@@ -138,82 +164,114 @@ export class AiService {
     };
   }
 
-  // ─── Analyze Stock ─────────────────────────────────────────────────────────
+  // ─── Analyze Stock (Gemini) ────────────────────────────────────────────────
   async analyzeStock(input: AnalyzeStockInput): Promise<AnalyzeStockResult> {
     const fallback = this.ruleBasedSignal(input);
+    console.log('AI INPUT:', input); // DEBUG
 
-    const prompt = [
-      {
-        role: 'system',
-        content:
-          'You are a professional stock market analyst. Given technical data, produce a short JSON analysis with keys: summary (string), signal ("BUY"|"SELL"|"HOLD"), reasoning (string), confidence (0-100 integer). Be concise and factual. Return ONLY valid JSON.',
-      },
-      {
-        role: 'user',
-        content: JSON.stringify({
-          symbol: input.symbol,
-          price: input.price,
-          dailyChange: input.change,
-          rsi14: input.rsi,
-          macdHistogram: input.macd,
-          sma20: input.sma20,
-          ema20: input.ema20,
-        }),
-      },
-    ];
+    if (input.price == null || !input.symbol) {
+      console.log('AI fallback used: missing symbol or price'); // DEBUG
+      return this.ruleBasedSignal(input); // FIXED // SAFE FALLBACK
+    }
 
-    const raw = await this.callOpenAI(prompt);
+    const prompt = `
+<role>
+You are a professional stock market analyst.
+</role>
 
-    if (!raw) {
-      return fallback;
+<context>
+Stock Data:
+Symbol: ${input.symbol}
+Price: ${input.price}
+Change: ${input.change}%
+RSI: ${input.rsi}
+MACD: ${input.macd}
+SMA20: ${input.sma20}
+Volume: ${input.volume}
+</context>
+
+<task>
+Analyze the stock trend and provide recommendation.
+</task>
+
+<output_format>
+Return STRICT JSON:
+
+{
+  "summary": "string",
+  "signal": "BUY | SELL | HOLD",
+  "reasoning": "string",
+  "confidence": number (0-100)
+}
+</output_format>
+`;
+
+    console.log('PROMPT:', prompt); // DEBUG
+    const raw = await this.callGemini(prompt);
+    console.log('GEMINI RESPONSE:', raw); // DEBUG
+
+    if (!raw || raw.trim() === '') {
+      console.log('AI fallback used'); // SAFE FALLBACK
+      return this.ruleBasedSignal(input); // SAFE FALLBACK
+    }
+
+    if (raw.toLowerCase().includes('no data was provided')) {
+      console.log('AI fallback used: Gemini reported missing data'); // DEBUG
+      return this.ruleBasedSignal(input); // FIXED // SAFE FALLBACK
     }
 
     try {
-      // Strip markdown code fences if present
-      const cleaned = raw.replace(/```json\n?|\n?```/g, '').trim();
+      const cleaned = raw
+        .replace(/```(?:json)?/gi, '')
+        .replace(/```/g, '')
+        .trim(); // FIXED
       const parsed = JSON.parse(cleaned);
+      const signal = String(parsed.signal ?? '').trim().toUpperCase(); // FIXED
 
       return {
         symbol: input.symbol,
         summary: String(parsed.summary ?? fallback.summary),
-        signal: (['BUY', 'SELL', 'HOLD'].includes(parsed.signal) ? parsed.signal : fallback.signal) as 'BUY' | 'SELL' | 'HOLD',
+        signal: (['BUY', 'SELL', 'HOLD'].includes(signal) ? signal : fallback.signal) as 'BUY' | 'SELL' | 'HOLD',
         reasoning: String(parsed.reasoning ?? fallback.reasoning),
-        confidence: Number.isFinite(Number(parsed.confidence)) ? Math.min(100, Math.max(0, Number(parsed.confidence))) : fallback.confidence,
-        source: 'openai',
+        confidence: Number.isFinite(Number(parsed.confidence))
+          ? Math.min(100, Math.max(0, Number(parsed.confidence)))
+          : fallback.confidence,
+        source: 'gemini',
       };
     } catch {
-      this.logger.warn('[AiService] Failed to parse OpenAI response as JSON — using fallback');
-      return { ...fallback, summary: raw.slice(0, 300), source: 'openai' };
+      this.logger.warn('[AiService] Failed to parse Gemini response as JSON — using fallback');
+      console.log('AI fallback used'); // SAFE FALLBACK
+      return this.ruleBasedSignal(input); // SAFE FALLBACK
     }
   }
 
-  // ─── Chatbot ───────────────────────────────────────────────────────────────
+  // ─── Chatbot (Gemini) ─────────────────────────────────────────────────────
   async chat(messages: ChatMessage[]): Promise<ChatResult> {
-    const systemMsg = {
-      role: 'system',
-      content:
-        'You are MarketBot, a helpful AI assistant specializing in stock market analysis, technical indicators, and investment concepts. Be concise and professional. Do NOT give personalized investment advice — always add a brief disclaimer.',
-    };
+    const combined = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
 
-    const openaiMessages = [
-      systemMsg,
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
-    ];
+    const prompt = `
+You are MarketBot, a helpful stock market assistant. Be concise.
+Do NOT give personalized investment advice. Add a brief disclaimer.
 
-    const reply = await this.callOpenAI(openaiMessages, 500);
+Conversation:
+${combined}
+`;
 
-    if (!reply) {
+    const reply = await this.callGemini(prompt); // FIXED
+    console.log('Gemini response:', reply); // ADDED DEBUG
+
+    if (!reply || reply.trim() === '') {
+      console.log('AI fallback used'); // SAFE FALLBACK
       return {
-        reply:
-          'I\'m temporarily unavailable (no OpenAI key configured). Set OPENAI_API_KEY in backend/.env to enable AI chat. For now, use the Technical Indicators section on each stock page for analysis.',
+        reply: 'AI temporarily unavailable. Please try again.',
         source: 'fallback',
       };
     }
 
-    return { reply, source: 'openai' };
+    return { reply, source: 'gemini' };
   }
 
-  // ─── News Summarization ────────────────────────────────────────────────────
+  // ─── News Summarization (Gemini) ───────────────────────────────────────────
   async summarizeNews(symbol: string, news: NewsItem[]): Promise<NewsSummaryResult> {
     if (!news || news.length === 0) {
       return {
@@ -223,26 +281,20 @@ export class AiService {
       };
     }
 
-    const prompt = [
-      {
-        role: 'system',
-        content:
-          'You are a financial news analyst. Summarize the provided news articles about a stock and classify overall market sentiment. Return valid JSON only with keys: summary (string, max 150 words), sentiment ("bullish"|"bearish"|"neutral").',
-      },
-      {
-        role: 'user',
-        content: `Symbol: ${symbol}\n\nArticles:\n${news
-          .slice(0, 5)
-          .map((n, i) => `${i + 1}. ${n.title}${n.content ? ': ' + n.content.slice(0, 200) : ''}`)
-          .join('\n')}`,
-      },
-    ];
+    const prompt = `
+Summarize the following news for ${symbol} in under 150 words and classify sentiment.
+Return STRICT JSON: { "summary": string, "sentiment": "bullish"|"bearish"|"neutral" }
 
-    const raw = await this.callOpenAI(prompt, 300);
+Articles:
+${news.slice(0, 5).map((n, i) => `${i + 1}. ${n.title} ${n.content?.slice(0, 200) ?? ''}`).join('\n')}
+`;
+
+    const raw = await this.callGemini(prompt); // FIXED
 
     if (!raw) {
+      console.log('AI fallback used'); // SAFE FALLBACK
       return {
-        summary: `Unable to summarize news for ${symbol} — OpenAI key not configured. Add OPENAI_API_KEY to backend/.env.`,
+        summary: `Unable to summarize news for ${symbol}.`,
         sentiment: 'neutral',
         source: 'fallback',
       };
@@ -256,13 +308,14 @@ export class AiService {
       return {
         summary: String(parsed.summary ?? raw.slice(0, 300)),
         sentiment: sentiments.includes(parsed.sentiment) ? parsed.sentiment : 'neutral',
-        source: 'openai',
+        source: 'gemini',
       };
     } catch {
+      console.log('AI fallback used'); // SAFE FALLBACK
       return {
         summary: raw.slice(0, 300),
         sentiment: 'neutral',
-        source: 'openai',
+        source: 'gemini',
       };
     }
   }

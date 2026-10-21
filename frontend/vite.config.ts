@@ -7,5 +7,8 @@ export default defineConfig({
     // FIX: Changed from 3000 to 5173 to match CORS allowlist and project spec
     port: 5173,
     strictPort: true,
+    watch: {
+      ignored: ['**/*.mp4', '**/*.webm', '**/*.mkv', '**/*.avi'],
+    },
   },
 });

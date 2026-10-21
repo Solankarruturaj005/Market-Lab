@@ -1,3 +1,18 @@
+import { Type } from 'class-transformer';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import {
   Body,
   Controller,
@@ -8,23 +23,89 @@ import {
 import { AiService, AnalyzeStockInput, ChatMessage, NewsItem } from './ai.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
-class AnalyzeStockDto implements AnalyzeStockInput {
-  symbol: string;
+export class ChatMessageDto implements ChatMessage {
+  @IsString()
+  @IsIn(['user', 'assistant'])
+  role!: 'user' | 'assistant';
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4000)
+  content!: string;
+}
+
+export class NewsItemDto implements NewsItem {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  content?: string;
+}
+
+export class AnalyzeStockDto implements AnalyzeStockInput {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 20)
+  symbol!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   price?: number | null;
+
+  @IsOptional()
+  @IsNumber()
   change?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
   rsi?: number | null;
+
+  @IsOptional()
+  @IsNumber()
   macd?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   sma20?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   ema20?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  volume?: number | null;
 }
 
-class ChatDto {
-  messages: ChatMessage[];
+export class ChatDto {
+  @IsArray()
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => ChatMessageDto)
+  messages!: ChatMessageDto[];
 }
 
-class SummarizeNewsDto {
-  symbol: string;
-  news: NewsItem[];
+export class SummarizeNewsDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 20)
+  symbol!: string;
+
+  @IsArray()
+  @ArrayMaxSize(25)
+  @ValidateNested({ each: true })
+  @Type(() => NewsItemDto)
+  news!: NewsItemDto[];
 }
 
 @Controller('ai')
@@ -38,6 +119,7 @@ export class AiController {
    */
   @Post('analyze-stock')
   analyzeStock(@Body() body: AnalyzeStockDto) {
+    console.log('AI INPUT BODY:', body); // DEBUG
     return this.aiService.analyzeStock(body);
   }
 
@@ -47,6 +129,7 @@ export class AiController {
    */
   @Post('chat')
   chat(@Body() body: ChatDto) {
+    console.log('AI CHAT HIT'); // ADDED DEBUG
     return this.aiService.chat(body.messages ?? []);
   }
 

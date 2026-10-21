@@ -4,6 +4,9 @@ import * as dotenv from 'dotenv';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
+const dns = require('dns'); // ADDED
+dns.setDefaultResultOrder('ipv4first'); // FIXED
+
 dotenv.config();
 dotenv.config({ path: 'backend/.env' });
 
@@ -34,9 +37,18 @@ async function bootstrap() {
     res.status(200).json({ status: 'ok', message: 'Backend is running', timestamp: new Date().toISOString() });
   });
 
-  // CORS: reflect request origin — safe for development, restrict in production
+  const isProduction = process.env.NODE_ENV === 'production';
+  const configuredOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173',
+      ];
+
   app.enableCors({
-    origin: true,
+    origin: isProduction ? configuredOrigins : true,
     credentials: true,
   });
 

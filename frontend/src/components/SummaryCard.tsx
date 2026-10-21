@@ -11,36 +11,48 @@ interface SummaryCardProps {
   variant?: SummaryVariant;
 }
 
-const variantStyles: Record<SummaryVariant, { icon: string; value: string; ring: string }> = {
+const variantStyles: Record<
+  SummaryVariant,
+  { iconBox: string; valueText: string }
+> = {
   positive: {
-    icon: 'bg-emerald-400/10 text-emerald-300',
-    value: 'text-emerald-300',
-    ring: 'hover:ring-1 hover:ring-emerald-400/15',
+    iconBox: 'border border-emerald-800/40 bg-emerald-950/40 text-[#059669]',
+    valueText: 'text-[#059669]',
   },
   negative: {
-    icon: 'bg-rose-400/10 text-rose-300',
-    value: 'text-rose-300',
-    ring: 'hover:ring-1 hover:ring-rose-400/15',
+    iconBox: 'border border-red-800/40 bg-red-950/40 text-[#DC2626]',
+    valueText: 'text-[#DC2626]',
   },
   neutral: {
-    icon: 'bg-cyan-400/10 text-cyan-300',
-    value: 'text-white',
-    ring: 'hover:ring-1 hover:ring-cyan-400/15',
+    iconBox: 'border border-[#334155] bg-[#1E293B] text-white',
+    valueText: 'text-white',
   },
 };
 
-export function SummaryCard({ title, value, subtitle, icon, variant = 'neutral' }: SummaryCardProps) {
+export function SummaryCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  variant = 'neutral',
+}: SummaryCardProps) {
   const styles = variantStyles[variant];
 
   return (
-    <article className={cn('card p-5 transition duration-200', styles.ring)}>
-      <div className="flex items-center justify-between">
+    <article className="card p-5 transition-colors hover:border-[#475569]">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="text-xs uppercase tracking-[0.22em] text-slate-500">{title}</div>
-          <div className={cn('mt-4 text-3xl font-semibold', styles.value)}>{value}</div>
-          <div className="mt-2 truncate text-sm text-slate-400">{subtitle}</div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#94A3B8]">
+            {title}
+          </span>
+          <div className={cn('mt-2 text-2xl font-bold tracking-tight', styles.valueText)}>
+            {value}
+          </div>
+          <div className="mt-1 truncate text-xs text-[#94A3B8]">{subtitle}</div>
         </div>
-        <div className={cn('ml-3 flex-shrink-0 rounded-2xl p-3', styles.icon)}>{icon}</div>
+        <div className={cn('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg', styles.iconBox)}>
+          {icon}
+        </div>
       </div>
     </article>
   );

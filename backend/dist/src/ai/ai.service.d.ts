@@ -7,6 +7,7 @@ export interface AnalyzeStockInput {
     macd?: number | null;
     sma20?: number | null;
     ema20?: number | null;
+    volume?: number | null;
 }
 export interface AnalyzeStockResult {
     symbol: string;
@@ -14,7 +15,7 @@ export interface AnalyzeStockResult {
     signal: 'BUY' | 'SELL' | 'HOLD';
     reasoning: string;
     confidence: number;
-    source: 'openai' | 'rule-based';
+    source: 'rule-based' | 'gemini';
 }
 export interface ChatMessage {
     role: 'user' | 'assistant';
@@ -22,7 +23,7 @@ export interface ChatMessage {
 }
 export interface ChatResult {
     reply: string;
-    source: 'openai' | 'fallback';
+    source: 'fallback' | 'gemini';
 }
 export interface NewsItem {
     title: string;
@@ -31,16 +32,17 @@ export interface NewsItem {
 export interface NewsSummaryResult {
     summary: string;
     sentiment: 'bullish' | 'bearish' | 'neutral';
-    source: 'openai' | 'fallback';
+    source: 'fallback' | 'gemini';
 }
 export declare class AiService {
     private readonly configService;
     private readonly logger;
-    private readonly openaiUrl;
-    private readonly model;
+    private readonly modelName;
+    private genAI;
     constructor(configService: ConfigService);
-    private get apiKey();
-    private callOpenAI;
+    private callGemini;
+    testGemini(): Promise<void>;
+    private geminiFailureFallback;
     private ruleBasedSignal;
     analyzeStock(input: AnalyzeStockInput): Promise<AnalyzeStockResult>;
     chat(messages: ChatMessage[]): Promise<ChatResult>;

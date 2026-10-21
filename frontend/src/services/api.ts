@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // TASK 5 FIX: Always trim the env var and provide a hardcoded fallback.
 const API_BASE_URL = (
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5000'
+  (import.meta?.env?.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5000'
 ).trim();
 
 // Protected routes require JWT bearer token
@@ -89,7 +89,7 @@ export const getLiveStock = async (symbol: string) => {
 // TASK 5 FIX: baseURL is now always a valid string — never undefined
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -100,17 +100,17 @@ api.interceptors.request.use((config) => {
   const token = getStoredToken();
   const needsAuth = isProtectedRequest(requestUrl);
 
-  // TASK 3: Attach token ONLY for protected routes
-  if (needsAuth && token) {
+  // Attach token for protected routes and whenever available (except unauthenticated auth endpoints)
+  if (token && !requestUrl.startsWith('/auth')) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // TASK 6: Surface missing-token warnings so they appear in browser DevTools
+  // Surface missing-token warnings so they appear in browser DevTools
   if (needsAuth && !token) {
     console.warn(`[API] ⚠️  Missing JWT token for protected request: ${getDisplayUrl(requestUrl)}`);
   }
 
-  // TASK 6: Log every outgoing request URL for easy debugging
+  // Log every outgoing request URL for easy debugging
   console.debug(`[API] → ${config.method?.toUpperCase()} ${getDisplayUrl(requestUrl)}`);
 
   return config;

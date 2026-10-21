@@ -10,20 +10,22 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
 
   return (
-    <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
       <div
-        className={`flex-shrink-0 rounded-full p-2 text-sm ${isUser
-          ? 'bg-cyan-400/10 text-cyan-300'
-          : 'bg-purple-400/10 text-purple-300'
-          }`}
+        className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border text-xs ${
+          isUser
+            ? 'border-[#334155] bg-[#1E293B] text-white'
+            : 'border-[#334155] bg-[#0F172A] text-[#94A3B8]'
+        }`}
       >
-        {isUser ? <User size={14} /> : <Bot size={14} />}
+        {isUser ? <User size={13} /> : <Bot size={13} />}
       </div>
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${isUser
-          ? 'bg-cyan-400/10 text-cyan-100 rounded-tr-sm'
-          : 'bg-white/5 text-slate-200 rounded-tl-sm'
-          }`}
+        className={`max-w-[82%] rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed ${
+          isUser
+            ? 'border-[#334155] bg-[#1E293B] text-white'
+            : 'border-[#334155] bg-[#0F172A] text-[#94A3B8]'
+        }`}
       >
         {message.content}
       </div>
@@ -36,7 +38,7 @@ export function ChatbotPanel({ onClose }: ChatbotProps) {
     {
       role: 'assistant',
       content:
-        "Hi! I'm MarketBot 🤖 Ask me about stock market concepts, technical indicators (RSI, MACD, SMA), or how to interpret signals. Note: I can't give personalized investment advice.",
+        "Welcome to MarketBot. Ask questions regarding technical indicators (RSI, MACD, SMA), market metrics, or signal calculations. Note: Output is for analytical education only and does not constitute investment advice.",
     },
   ]);
   const [input, setInput] = useState('');
@@ -60,17 +62,15 @@ export function ChatbotPanel({ onClose }: ChatbotProps) {
     setIsTyping(true);
 
     try {
-      // Only send the last 10 messages to avoid token limit
-      const history = updatedMessages.slice(-10);
-      const result = await chatWithBot(history);
+      const result = await chatWithBot([{ role: 'user', content: text }]);
       setMessages((prev) => [...prev, { role: 'assistant', content: result.reply }]);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
           content:
-            'Sorry, I encountered an error. Make sure you are logged in and the backend is running.',
+            'Unable to process assistant query. Please confirm your session status or backend availability.',
         },
       ]);
     } finally {
@@ -87,70 +87,68 @@ export function ChatbotPanel({ onClose }: ChatbotProps) {
   };
 
   return (
-    <div className="flex flex-col rounded-[28px] border border-white/10 bg-slate-950/80 shadow-2xl shadow-slate-950/40 backdrop-blur-xl overflow-hidden"
+    <div
+      className="flex flex-col rounded-xl border border-[#334155] bg-[#0F172A] shadow-2xl overflow-hidden"
       style={{ height: '480px', width: '100%' }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-purple-400/10 p-2 text-purple-300">
-            <Bot size={18} />
+      <div className="flex items-center justify-between border-b border-[#334155] bg-[#1E293B]/60 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[#334155] bg-[#0F172A] text-white">
+            <Bot size={15} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-white">MarketBot</div>
-            <div className="text-xs text-slate-500">AI stock market assistant</div>
+            <div className="text-xs font-semibold text-white">MarketBot Intelligence</div>
+            <div className="text-[10px] text-[#94A3B8]">Analytical Q&amp;A Assistant</div>
           </div>
         </div>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-white/10 p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            className="rounded p-1 text-[#94A3B8] hover:bg-[#334155] hover:text-white transition"
+            aria-label="Close chat"
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         )}
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 scrollbar-thin">
-        {messages.map((msg, i) => (
-          <MessageBubble key={i} message={msg} />
+      {/* Message Area */}
+      <div className="flex-1 space-y-3 overflow-y-auto p-4 text-xs">
+        {messages.map((msg, index) => (
+          <MessageBubble key={index} message={msg} />
         ))}
         {isTyping && (
-          <div className="flex gap-2 items-center">
-            <div className="flex-shrink-0 rounded-full bg-purple-400/10 p-2 text-purple-300">
-              <Bot size={14} />
-            </div>
-            <div className="flex gap-1 rounded-2xl bg-white/5 px-4 py-3">
-              <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:0ms]" />
-              <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:150ms]" />
-              <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:300ms]" />
-            </div>
+          <div className="flex items-center gap-2 text-xs text-[#94A3B8]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+            Generating response...
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
       {/* Input */}
-      <div className="border-t border-white/10 px-4 py-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+      <div className="border-t border-[#334155] p-3 bg-[#0F172A]">
+        <div className="flex items-center gap-2">
           <input
             ref={inputRef}
+            type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about RSI, MACD, market trends…"
-            className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+            placeholder="Ask about indicators, formulas, or concepts..."
+            className="flex-1 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs text-white placeholder-[#94A3B8] focus:border-[#F8FAFC] focus:outline-none transition-colors"
             disabled={isTyping}
           />
           <button
             type="button"
-            onClick={() => void handleSend()}
+            onClick={handleSend}
             disabled={!input.trim() || isTyping}
-            className="rounded-xl bg-purple-400/10 p-2 text-purple-300 transition hover:bg-purple-400/20 active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F8FAFC] text-[#0F172A] hover:bg-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Send message"
           >
-            <Send size={15} />
+            <Send size={14} />
           </button>
         </div>
       </div>

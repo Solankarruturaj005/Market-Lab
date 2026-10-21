@@ -8,7 +8,16 @@ import { calculateMACD } from './strategies/macd';
 export class IndicatorService {
   analyzeStock(history: any[]) {
     if (!history || history.length < 30) {
-       return { signal: 'HOLD', confidence: 50, indicators: {} };
+      return {
+        signal: 'HOLD',
+        confidence: 0,
+        indicators: {
+          sma20: null,
+          ema20: null,
+          rsi14: null,
+          macdHistogram: null,
+        },
+      };
     }
 
     // Extract close prices (assuming history is sorted chronological)

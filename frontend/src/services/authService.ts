@@ -15,3 +15,8 @@ export async function verifyOtp(payload: VerifyOtpPayload) {
   const { data } = await api.post<MessageResponse>('/auth/verify-otp', payload);
   return data;
 }
+
+export async function resendOtp(email: string) {
+  const { data } = await api.post<MessageResponse>('/auth/resend-otp', { email });
+  return data;
+}

@@ -19,4 +19,7 @@ export declare class AuthController {
     verifyOtp(body: VerifyOtpDto): Promise<{
         message: string;
     }>;
+    resendOtp(email: string): Promise<{
+        message: string;
+    }>;
 }

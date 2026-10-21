@@ -1,5 +1,13 @@
 import { AiService, AnalyzeStockInput, ChatMessage, NewsItem } from './ai.service';
-declare class AnalyzeStockDto implements AnalyzeStockInput {
+export declare class ChatMessageDto implements ChatMessage {
+    role: 'user' | 'assistant';
+    content: string;
+}
+export declare class NewsItemDto implements NewsItem {
+    title: string;
+    content?: string;
+}
+export declare class AnalyzeStockDto implements AnalyzeStockInput {
     symbol: string;
     price?: number | null;
     change?: number | null;
@@ -7,13 +15,14 @@ declare class AnalyzeStockDto implements AnalyzeStockInput {
     macd?: number | null;
     sma20?: number | null;
     ema20?: number | null;
+    volume?: number | null;
 }
-declare class ChatDto {
-    messages: ChatMessage[];
+export declare class ChatDto {
+    messages: ChatMessageDto[];
 }
-declare class SummarizeNewsDto {
+export declare class SummarizeNewsDto {
     symbol: string;
-    news: NewsItem[];
+    news: NewsItemDto[];
 }
 export declare class AiController {
     private readonly aiService;
@@ -22,4 +31,3 @@ export declare class AiController {
     chat(body: ChatDto): Promise<import("./ai.service").ChatResult>;
     summarizeNews(body: SummarizeNewsDto, _req: any): Promise<import("./ai.service").NewsSummaryResult>;
 }
-export {};

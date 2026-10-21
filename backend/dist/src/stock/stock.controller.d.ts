@@ -6,5 +6,6 @@ export declare class StockController {
     constructor(stockService: StockService, stockApiService: StockApiService);
     getAllStocks(): Promise<import("./stock.service").StockResponse[]>;
     getLiveStock(symbol: string): Promise<import("./stock-api.service").LiveQuote>;
+    getStockHistory(symbol: string, range?: string, interval?: string): Promise<import("./stock.service").StockHistoryResponse>;
     getStock(symbol: string): Promise<import("./stock.service").StockResponse>;
 }

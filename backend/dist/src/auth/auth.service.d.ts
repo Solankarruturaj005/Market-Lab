@@ -6,7 +6,11 @@ export declare class AuthService {
     private readonly userService;
     private readonly jwtService;
     private readonly logger;
+    private readonly otpAttemptMap;
+    private readonly loginAttemptMap;
+    private readonly otpRateLimitMap;
     constructor(userService: UserService, jwtService: JwtService);
+    private isDevMode;
     register(data: RegisterDto): Promise<{
         message: string;
     }>;
@@ -18,7 +22,11 @@ export declare class AuthService {
             name: string;
         };
     }>;
+    private recordFailedLogin;
     verifyOtp(email: string, otp: string): Promise<{
+        message: string;
+    }>;
+    resendOtp(rawEmail: string): Promise<{
         message: string;
     }>;
     private generateOtp;

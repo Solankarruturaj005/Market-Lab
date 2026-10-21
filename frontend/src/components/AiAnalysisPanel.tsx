@@ -1,27 +1,32 @@
-import { Bot, Brain, RefreshCw, Sparkles, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { Bot, Brain, RefreshCw, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { analyzeStock, type AnalyzeStockInput, type AnalyzeStockResult } from '../services/aiService';
+import { SignalBadge } from './SignalBadge';
+import {
+  analyzeStock,
+  type AnalyzeStockInput,
+  type AnalyzeStockResult,
+} from '../services/aiService';
 
 interface AiAnalysisPanelProps {
   input: AnalyzeStockInput;
 }
 
-function SignalIcon({ signal }: { signal: string }) {
-  if (signal === 'BUY') return <TrendingUp size={18} className="text-emerald-300" />;
-  if (signal === 'SELL') return <TrendingDown size={18} className="text-rose-300" />;
-  return <Minus size={18} className="text-slate-300" />;
-}
-
 function ConfidenceBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, value));
-  const color = pct >= 70 ? 'bg-emerald-400' : pct >= 45 ? 'bg-cyan-400' : 'bg-rose-400';
+  const color = pct >= 70 ? 'bg-[#059669]' : pct >= 45 ? 'bg-slate-400' : 'bg-[#DC2626]';
 
   return (
-    <div className="relative mt-2 h-1.5 w-full rounded-full bg-white/10">
-      <div
-        className={`h-1.5 rounded-full transition-all duration-700 ${color}`}
-        style={{ width: `${pct}%` }}
-      />
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="text-[#94A3B8]">Algorithmic Confidence:</span>
+        <span className="font-mono font-semibold text-white">{pct.toFixed(0)}%</span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-[#1E293B] border border-[#334155] overflow-hidden">
+        <div
+          className={`h-full transition-all duration-500 ${color}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -39,30 +44,29 @@ export function AiAnalysisPanel({ input }: AiAnalysisPanelProps) {
       const data = await analyzeStock(input);
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to fetch AI analysis.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to complete AI analysis. Check backend connectivity or model quotas.',
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signalColor =
-    result?.signal === 'BUY'
-      ? 'text-emerald-300 bg-emerald-400/10 ring-1 ring-emerald-400/20'
-      : result?.signal === 'SELL'
-        ? 'text-rose-300 bg-rose-400/10 ring-1 ring-rose-400/20'
-        : 'text-slate-200 bg-white/5 ring-1 ring-white/10';
-
   return (
     <section className="card p-6 space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#334155] pb-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-purple-400/10 p-3 text-purple-300">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#334155] bg-[#1E293B] text-white">
             <Brain size={20} />
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.22em] text-purple-300/80">AI Feature</div>
-            <h2 className="text-xl font-semibold text-white">Intelligent stock analysis</h2>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[#94A3B8]">
+              Automated Synthesis
+            </div>
+            <h2 className="text-lg font-semibold text-white">Gemini AI Stock Analysis</h2>
           </div>
         </div>
 
@@ -70,86 +74,75 @@ export function AiAnalysisPanel({ input }: AiAnalysisPanelProps) {
           type="button"
           onClick={handleAnalyze}
           disabled={isLoading}
-          className="inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/10 px-4 py-2.5 text-sm font-semibold text-purple-200 transition hover:border-purple-400/40 hover:bg-purple-400/15 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="primary-button text-xs py-2 px-4"
         >
           {isLoading ? (
             <>
-              <RefreshCw size={15} className="animate-spin" />
-              Analyzing…
+              <RefreshCw size={14} className="animate-spin" />
+              Synthesizing...
             </>
           ) : (
             <>
-              <Sparkles size={15} />
-              {result ? 'Re-analyze' : 'Analyze with AI'}
+              <Sparkles size={14} />
+              {result ? 'Re-run Analysis' : 'Run AI Analysis'}
             </>
           )}
         </button>
       </div>
 
-      {/* Error */}
+      {/* Error state */}
       {error && (
-        <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-300">
-          {error}
+        <div className="rounded-lg border border-[#DC2626]/40 bg-[#DC2626]/10 p-4 text-xs text-white">
+          <span className="font-semibold text-[#DC2626]">Analysis Service Notice: </span>
+          <span className="text-[#94A3B8]">{error}</span>
         </div>
       )}
 
-      {/* Placeholder before analysis */}
+      {/* Initial Empty / Prompt State */}
       {!result && !isLoading && !error && (
-        <div className="rounded-2xl border border-dashed border-white/10 px-6 py-8 text-center text-sm text-slate-500">
-          <Bot size={28} className="mx-auto mb-3 opacity-40" />
-          Click <span className="text-purple-300 font-semibold">Analyze with AI</span> to get an AI-powered
-          Buy / Sell / Hold signal and market summary for {input.symbol}.
-        </div>
-      )}
-
-      {/* Loading skeleton */}
-      {isLoading && (
-        <div className="space-y-3">
-          <div className="skeleton h-4 w-3/4 rounded-lg" />
-          <div className="skeleton h-4 w-full rounded-lg" />
-          <div className="skeleton h-4 w-5/6 rounded-lg" />
-        </div>
-      )}
-
-      {/* Result */}
-      {result && !isLoading && (
-        <div className="space-y-4">
-          {/* Signal + confidence */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${signalColor}`}>
-              <SignalIcon signal={result.signal} />
-              {result.signal}
-            </div>
-            <div className="text-sm text-slate-400">
-              Confidence: <span className="font-semibold text-white">{result.confidence}%</span>
-              <ConfidenceBar value={result.confidence} />
-            </div>
-            {result.source === 'openai' ? (
-              <span className="rounded-full border border-purple-400/20 bg-purple-400/10 px-3 py-1 text-xs text-purple-300">
-                GPT-powered
-              </span>
-            ) : (
-              <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-300">
-                Rule-based
-              </span>
-            )}
-          </div>
-
-          {/* Summary */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-7 text-slate-300">
-            <p className="font-semibold text-white mb-1">Summary</p>
-            <p>{result.summary}</p>
-          </div>
-
-          {/* Reasoning */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-7 text-slate-300">
-            <p className="font-semibold text-white mb-1">Reasoning</p>
-            <p>{result.reasoning}</p>
-          </div>
-
-          <p className="text-xs text-slate-600">
-            ⚠ AI analysis is for educational purposes only and does not constitute investment advice.
+        <div className="rounded-lg border border-dashed border-[#334155] p-8 text-center space-y-3">
+          <Bot size={28} className="mx-auto text-[#64748B]" />
+          <h3 className="text-sm font-semibold text-white">On-Demand AI Synthesis</h3>
+          <p className="mx-auto max-w-md text-xs text-[#94A3B8] leading-relaxed">
+            Click &ldquo;Run AI Analysis&rdquo; to serialize the latest historical OHLCV data and
+            quantitative technicals into Google Gemini for an institutional thesis review.
           </p>
+        </div>
+      )}
+
+      {/* Analysis Results Display */}
+      {result && (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 items-center rounded-lg border border-[#334155] bg-[#1E293B]/40 p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[#94A3B8]">Model Signal:</span>
+              <SignalBadge signal={result.signal} />
+            </div>
+            <ConfidenceBar value={result.confidence} />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+              Executive Summary
+            </h3>
+            <div className="rounded-lg border border-[#334155] bg-[#1E293B]/30 p-4 text-xs text-white leading-relaxed">
+              {result.summary}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+              Technical Rationale &amp; Key Factors
+            </h3>
+            <div className="rounded-lg border border-[#334155] bg-[#1E293B]/30 p-4 text-xs text-[#94A3B8] leading-relaxed">
+              {result.reasoning}
+            </div>
+          </div>
+
+          <div className="text-[11px] text-[#64748B] pt-1 border-t border-[#334155]">
+            * Analytical output generated by Google Gemini model based on serialized indicator
+            inputs. Not personalized investment advice.
+          </div>
         </div>
       )}
     </section>

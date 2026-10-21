@@ -1,6 +1,7 @@
 import { ArrowDownRight, ArrowUpRight, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { DataBadge } from './DataBadge';
 import { MiniSparkline } from './ChartComponent';
 import type { Stock } from '../types/stock';
 import { cn } from '../utils/cn';
@@ -28,19 +29,9 @@ export function StockCard({
   const displayPrice = displayStock.price;
   const displayChange = displayStock.change;
 
-  // 🔥 FIX: Safe checks
-  const hasValidPrice =
-    displayPrice !== null &&
-    displayPrice !== undefined &&
-    displayPrice > 0;
-
-  const hasValidChange =
-    displayChange !== null &&
-    displayChange !== undefined;
-
+  const hasValidPrice = displayPrice !== null && displayPrice !== undefined && displayPrice > 0;
   const positive = displayChange == null ? true : displayChange >= 0;
-
-  const sparkColor = positive ? '#10b981' : '#f43f5e';
+  const sparkColor = positive ? '#059669' : '#DC2626';
 
   useEffect(() => {
     if (!hasValidPrice || displayPrice == null) {
@@ -58,119 +49,96 @@ export function StockCard({
     previousPrice.current = displayPrice;
   }, [displayPrice, hasValidPrice]);
 
-  const latestSma =
-    displayStock.history && displayStock.history.length >= 20
-      ? Number(
-          (
-            displayStock.history
-              .slice(-20)
-              .reduce((total, point) => total + point.close, 0) / 20
-          ).toFixed(2),
-        )
-      : null;
-
   return (
     <article
       className={cn(
-        'card group relative overflow-hidden p-5 transition duration-300 hover:-translate-y-1 hover:shadow-2xl',
-        highlighted && 'ring-1 ring-cyan-300/20',
-        positive
-          ? 'hover:ring-1 hover:ring-emerald-400/15'
-          : 'hover:ring-1 hover:ring-rose-400/15',
+        'card group relative p-4 transition-colors hover:border-[#475569]',
+        highlighted && 'border-slate-500 bg-[#1E293B]/40',
       )}
     >
-      {/* Background glow */}
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100',
-          positive ? 'bg-emerald-400/[0.03]' : 'bg-rose-400/[0.03]',
-        )}
-      />
-
-      <div className="flex items-start justify-between gap-4">
-        <Link to={`/stock/${displayStock.symbol}`} className="space-y-1 flex-1 min-w-0">
-          <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-            {displayStock.symbol}
-          </p>
-          <h3 className="truncate text-lg font-semibold text-white group-hover:text-cyan-100 transition-colors">
+      {/* Header: Symbol, Name & Watchlist Toggle */}
+      <div className="flex items-start justify-between gap-3">
+        <Link to={`/stock/${displayStock.symbol}`} className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-white group-hover:underline">
+              {displayStock.symbol}
+            </span>
+            {displayStock.isFallback ? (
+              <DataBadge variant="fallback" label="Cached" />
+            ) : displayStock.source === 'live' ? (
+              <DataBadge variant="live" label="Live" />
+            ) : null}
+          </div>
+          <h3 className="truncate text-xs font-normal text-[#94A3B8] mt-0.5">
             {displayStock.name}
           </h3>
         </Link>
 
-        <button
-          type="button"
-          onClick={() => onToggleWatchlist?.(stock)}
-          disabled={pending}
-          className={cn(
-            'flex-shrink-0 rounded-full border p-2 transition active:scale-90',
-            pending && 'cursor-not-allowed opacity-60',
-            inWatchlist
-              ? 'border-amber-300/30 bg-amber-400/10 text-amber-200'
-              : 'border-white/10 bg-white/5 text-slate-300 hover:border-cyan-300/30 hover:text-cyan-200',
-          )}
-        >
-          <Star size={16} className={cn(inWatchlist && 'fill-current')} />
-        </button>
-      </div>
-
-      {/* Chart */}
-      {displayStock.history && displayStock.history.length > 1 && (
-        <div className="mt-3 -mx-1">
-          <MiniSparkline data={displayStock.history} color={sparkColor} />
-        </div>
-      )}
-
-      {/* Tags */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-400">
-          {positive ? 'Positive momentum' : 'Under pressure'}
-        </span>
-
-        {latestSma != null && (
-          <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-200">
-            20D SMA {formatCurrency(latestSma)}
-          </span>
-        )}
-
-        {/* 🔥 NEW: Fallback indicator */}
-        {displayStock.isFallback && (
-          <span className="rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-yellow-200">
-            (cached)
-          </span>
-        )}
-      </div>
-
-      {/* Price + Change */}
-      <div className="mt-3 flex items-end justify-between gap-4">
-        <div>
-          <div
+        {onToggleWatchlist && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={(e) => {
+              e.preventDefault();
+              onToggleWatchlist(displayStock);
+            }}
             className={cn(
-              'rounded-xl text-3xl font-semibold text-white transition-colors duration-500',
-              priceFlash === 'up' && 'price-flash-up',
-              priceFlash === 'down' && 'price-flash-down',
+              'rounded p-1.5 transition',
+              inWatchlist
+                ? 'text-amber-400 hover:text-amber-300'
+                : 'text-[#64748B] hover:bg-[#1E293B] hover:text-white',
+              pending && 'opacity-50 cursor-not-allowed',
+            )}
+            title={inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+            aria-label={inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+          >
+            <Star size={16} fill={inWatchlist ? 'currentColor' : 'none'} />
+          </button>
+        )}
+      </div>
+
+      {/* Mini Sparkline Chart */}
+      <div className="my-3">
+        {displayStock.history && displayStock.history.length > 1 ? (
+          <MiniSparkline
+            data={displayStock.history}
+            currentPrice={displayPrice}
+            color={sparkColor}
+          />
+        ) : (
+          <div className="h-10 rounded border border-dashed border-[#334155]/60 flex items-center justify-center text-[10px] text-[#64748B]">
+            No sparkline data
+          </div>
+        )}
+      </div>
+
+      {/* Price & Change Row */}
+      <div className="flex items-baseline justify-between pt-1 border-t border-[#334155]/60">
+        <div>
+          <span
+            className={cn(
+              'font-mono text-base font-semibold text-white transition-colors duration-300',
+              priceFlash === 'up' && 'text-[#059669]',
+              priceFlash === 'down' && 'text-[#DC2626]',
             )}
           >
-            {/* Safe price display */}
-            {hasValidPrice ? formatCurrency(displayStock.price) : 'N/A'}
-          </div>
-
-          <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-            Vol {formatCompactNumber(displayStock.volume)}
-          </div>
+            {hasValidPrice ? formatCurrency(displayPrice!, displayStock.symbol) : '—'}
+          </span>
+          <span className="block text-[10px] text-[#64748B]">
+            Vol: {displayStock.volume ? formatCompactNumber(displayStock.volume) : 'N/A'}
+          </span>
         </div>
 
-        <div
-          className={cn(
-            'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold',
-            positive
-              ? 'bg-emerald-500/10 text-emerald-300'
-              : 'bg-rose-500/10 text-rose-300',
-          )}
-        >
-          {positive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-
-          {/*Safe change display */}
-          {hasValidChange ? formatPercent(displayStock.change) : '--'}
+        <div className="text-right">
+          <span
+            className={cn(
+              'inline-flex items-center gap-0.5 font-mono text-xs font-semibold',
+              positive ? 'text-[#059669]' : 'text-[#DC2626]',
+            )}
+          >
+            {positive ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+            {displayChange != null ? formatPercent(displayChange) : '0.00%'}
+          </span>
         </div>
       </div>
     </article>

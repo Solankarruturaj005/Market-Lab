@@ -28,6 +28,10 @@ let StockController = class StockController {
     getLiveStock(symbol) {
         return this.stockApiService.getStockPrice(symbol);
     }
+    async getStockHistory(symbol, range, interval) {
+        console.log(`[StockController] GET /stocks/${symbol}/history?range=${range}&interval=${interval}`);
+        return this.stockService.getHistoryBySymbol(symbol, range, interval);
+    }
     async getStock(symbol) {
         console.log(`[StockController] GET /stocks/${symbol}`);
         return this.stockService.findBySymbol(symbol);
@@ -46,6 +50,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], StockController.prototype, "getLiveStock", null);
+__decorate([
+    (0, common_1.Get)(':symbol/history'),
+    __param(0, (0, common_1.Param)('symbol')),
+    __param(1, (0, common_1.Query)('range')),
+    __param(2, (0, common_1.Query)('interval')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", Promise)
+], StockController.prototype, "getStockHistory", null);
 __decorate([
     (0, common_1.Get)(':symbol'),
     __param(0, (0, common_1.Param)('symbol')),

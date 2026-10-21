@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { StockService } from './stock.service';
 import { StockApiService } from './stock-api.service';
 
@@ -6,7 +6,7 @@ import { StockApiService } from './stock-api.service';
 export class StockController {
   constructor(
     private readonly stockService: StockService,
-    private readonly stockApiService: StockApiService, // ✅ injected
+    private readonly stockApiService: StockApiService,
   ) {}
 
   @Get()
@@ -18,6 +18,16 @@ export class StockController {
   @Get('live/:symbol')
   getLiveStock(@Param('symbol') symbol: string) {
     return this.stockApiService.getStockPrice(symbol);
+  }
+
+  @Get(':symbol/history')
+  async getStockHistory(
+    @Param('symbol') symbol: string,
+    @Query('range') range?: string,
+    @Query('interval') interval?: string,
+  ) {
+    console.log(`[StockController] GET /stocks/${symbol}/history?range=${range}&interval=${interval}`);
+    return this.stockService.getHistoryBySymbol(symbol, range, interval);
   }
 
   @Get(':symbol')

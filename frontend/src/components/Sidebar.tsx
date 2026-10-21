@@ -1,5 +1,14 @@
-import { BellRing, ChartCandlestick, LayoutDashboard, Star, X } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import {
+  BellRing,
+  Info,
+  LayoutDashboard,
+  LineChart,
+  LogOut,
+  Star,
+  X,
+} from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 import { cn } from '../utils/cn';
 
 interface SidebarProps {
@@ -11,44 +20,67 @@ const navigation = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/watchlist', label: 'Watchlist', icon: Star },
   { to: '/alerts', label: 'Alerts', icon: BellRing },
+  { to: '/about', label: 'About', icon: Info },
 ];
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    onClose();
+    logout();
+    navigate('/auth');
+  };
+
   return (
     <>
+      {/* Mobile backdrop */}
       <div
         className={cn(
-          'fixed inset-0 z-30 bg-slate-950/70 transition md:hidden',
+          'fixed inset-0 z-40 bg-black/60 transition-opacity md:hidden',
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={onClose}
+        aria-hidden="true"
       />
+
+      {/* Sidebar container */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-80 flex-col border-r border-white/10 bg-slate-950/95 px-6 py-6 shadow-2xl shadow-slate-950/50 backdrop-blur-xl transition-transform md:static md:w-72 md:translate-x-0 md:bg-white/5',
+          'fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#334155] bg-[#0F172A] p-5 transition-transform duration-200 md:static md:w-64 md:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between">
+        {/* Header / Brand */}
+        <div className="flex items-center justify-between border-b border-[#334155] pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-300">
-              <ChartCandlestick size={22} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#334155] bg-[#1E293B] text-white">
+              <LineChart size={18} />
             </div>
             <div>
-              <div className="text-xs uppercase tracking-[0.24em] text-cyan-500">Stocks Analysis</div>
-              <div className="text-lg font-Serif text-white">Market Lab</div>
+              <div className="text-sm font-bold tracking-tight text-white">Market Lab</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider text-[#94A3B8]">
+                Analytics Platform
+              </div>
             </div>
           </div>
           <button
             type="button"
-            className="rounded-full border border-white/10 p-2 text-slate-300 md:hidden"
+            className="rounded-lg p-1.5 text-[#94A3B8] hover:text-white hover:bg-[#1E293B] md:hidden"
             onClick={onClose}
+            aria-label="Close menu"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
-        <nav className="mt-10 space-y-3">
+        {/* Navigation Links */}
+        <nav className="mt-6 flex-1 space-y-1">
+          <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+            Navigation
+          </div>
           {navigation.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -56,25 +88,45 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/20'
-                    : 'text-slate-300 hover:bg-white/5 hover:text-white',
+                    ? 'border border-[#334155] bg-[#1E293B] text-white'
+                    : 'text-[#94A3B8] hover:bg-[#1E293B]/60 hover:text-white',
                 )
               }
             >
-              <Icon size={18} />
-              {label}
+              <Icon size={16} />
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="card mt-auto p-5">
-          <div className="text-xs uppercase tracking-[0.24em] text-cyan-300/75">Daily Insight</div>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            Use the watchlist to track your core symbols and open stock details for technical
-            indicators and signal trends.
-          </p>
+        {/* User Account Controls & Logout */}
+        <div className="border-t border-[#334155] pt-4">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#334155]/60 bg-[#1E293B]/40 p-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#334155] bg-[#0F172A] text-xs font-semibold text-white">
+                {(user?.name ?? user?.email ?? 'U').slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 truncate">
+                <div className="truncate text-xs font-semibold text-white">
+                  {user?.name ?? 'Analyst'}
+                </div>
+                <div className="truncate text-[11px] text-[#94A3B8]">
+                  {user?.email ?? 'analyst@marketlab.ai'}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex-shrink-0 rounded p-1.5 text-[#94A3B8] hover:bg-[#334155] hover:text-white transition"
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
       </aside>
     </>

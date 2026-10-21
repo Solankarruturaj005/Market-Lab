@@ -15,7 +15,16 @@ const macd_1 = require("./strategies/macd");
 let IndicatorService = class IndicatorService {
     analyzeStock(history) {
         if (!history || history.length < 30) {
-            return { signal: 'HOLD', confidence: 50, indicators: {} };
+            return {
+                signal: 'HOLD',
+                confidence: 0,
+                indicators: {
+                    sma20: null,
+                    ema20: null,
+                    rsi14: null,
+                    macdHistogram: null,
+                },
+            };
         }
         const closes = history.map(item => Number(item.close));
         const sma20 = (0, sma_1.calculateSMA)(closes, 20);

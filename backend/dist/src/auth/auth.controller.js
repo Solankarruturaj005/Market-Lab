@@ -32,6 +32,9 @@ let AuthController = class AuthController {
     async verifyOtp(body) {
         return this.authService.verifyOtp(body.email, body.otp);
     }
+    async resendOtp(email) {
+        return this.authService.resendOtp(email);
+    }
 };
 __decorate([
     (0, common_1.Post)('register'),
@@ -54,6 +57,13 @@ __decorate([
     __metadata("design:paramtypes", [verify_otp_dto_1.VerifyOtpDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyOtp", null);
+__decorate([
+    (0, common_1.Post)('resend-otp'),
+    __param(0, (0, common_1.Body)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resendOtp", null);
 AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

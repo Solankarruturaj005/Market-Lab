@@ -11,11 +11,6 @@ export declare class PredictionService {
         prediction: string;
         confidence: number;
         indicators: {
-            sma20?: undefined;
-            ema20?: undefined;
-            rsi14?: undefined;
-            macdHistogram?: undefined;
-        } | {
             sma20: number;
             ema20: number;
             rsi14: number;
